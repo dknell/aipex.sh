@@ -49,6 +49,14 @@ fi
 REPO_URL="https://raw.githubusercontent.com/dknell/aipex.sh/refs/heads/main"
 TEMPLATES_BASE_URL="$REPO_URL/templates"
 
+# Project evaluation variables
+PROJECT_PACKAGE_MANAGER=""
+PROJECT_TYPESCRIPT=""
+PROJECT_FRAMEWORK=""
+PROJECT_TESTING=""
+PROJECT_LINTING=""
+PROJECT_FORMATTING=""
+
 # Header
 printf "${CYAN}🚀 Enterprise AI Coding Workflow Setup v2.1${NC}\n"
 if [ "$DRY_RUN" = true ]; then
@@ -182,18 +190,7 @@ download_templates() {
     fi
 }
 
-detect_and_show_tools() {
-    if [ "$DRY_RUN" = false ]; then
-        # Source tool detection functions
-        source .aipex/templates/scripts/tool-detection.sh
-        source .aipex/templates/scripts/setup-configs.sh
-        
-        # Show detected tools
-        show_tool_status
-    else
-        printf "${BLUE}🔍 Detected Development Environment: ${YELLOW}(SKIPPED - dry-run)${NC}\n"
-    fi
-    
+get_user_confirmation() {
     # Display interactive confirmation
     show_planned_actions
     
@@ -205,11 +202,17 @@ detect_and_show_tools() {
         printf "${CYAN}Continue with setup? [Y/n]:${NC} "
     fi
     
-    # Handle piped input by redirecting to /dev/tty
+    # Handle piped input by redirecting to /dev/tty if available
     if [ -t 0 ]; then
         read -r response
     else
-        read -r response < /dev/tty
+        # Try to read from /dev/tty for piped input
+        if [ -c /dev/tty ] && read -r response < /dev/tty 2>/dev/null; then
+            : # Successfully read from /dev/tty
+        else
+            # Fallback: read from stdin (for piped input like echo "Y" | script)
+            read -r response
+        fi
     fi
     
     if [[ "$response" =~ ^[Nn]$ ]]; then
@@ -218,10 +221,37 @@ detect_and_show_tools() {
     fi
 }
 
+detect_and_show_tools() {
+    if [ "$DRY_RUN" = false ]; then
+        # Source tool detection functions
+        source .aipex/templates/scripts/tool-detection.sh
+        source .aipex/templates/scripts/setup-configs.sh
+        
+        # Show detected tools (this runs after files are downloaded)
+        printf "${BLUE}🔍 Final tool detection and configuration...${NC}\n"
+        printf "Package Manager: $PROJECT_PACKAGE_MANAGER\n"
+        printf "TypeScript: $PROJECT_TYPESCRIPT\n"
+        printf "Framework: $PROJECT_FRAMEWORK\n"
+        printf "Testing: $PROJECT_TESTING\n"
+        printf "Linting: $PROJECT_LINTING\n"
+        printf "Formatting: $PROJECT_FORMATTING\n"
+    else
+        printf "${BLUE}🔍 Tool detection: ${YELLOW}(SKIPPED - dry-run)${NC}\n"
+    fi
+}
+
 show_planned_actions() {
     printf "\n"
     printf "${CYAN}📋 PLANNED ACTIONS:${NC}\n"
     printf "+----------------------------------------------------+\n"
+    printf "| %-50s |\n" "DETECTED ENVIRONMENT:"
+    printf "| %-50s |\n" "Package Manager: $PROJECT_PACKAGE_MANAGER"
+    printf "| %-50s |\n" "TypeScript: $PROJECT_TYPESCRIPT"
+    printf "| %-50s |\n" "Framework: $PROJECT_FRAMEWORK"
+    printf "| %-50s |\n" "Testing: $PROJECT_TESTING"
+    printf "| %-50s |\n" "Linting: $PROJECT_LINTING"
+    printf "| %-50s |\n" "Formatting: $PROJECT_FORMATTING"
+    printf "| %-50s |\n" ""
     printf "| %-50s |\n" "DIRECTORY STRUCTURE:"
     printf "| %-50s |\n" "[x] Create .claude/ commands & agents"
     printf "| %-50s |\n" "[x] Create .aipex/ organized container"
@@ -235,8 +265,113 @@ show_planned_actions() {
     printf "| %-50s |\n" "[x] Ticket-based PRP naming"
     printf "| %-50s |\n" "[x] Security configurations"
     printf "| %-50s |\n" "[x] Example patterns"
-    printf "| %-50s |\n" "[x] Package.json scripts (if available)"
+    if [ "$PROJECT_PACKAGE_MANAGER" != "none" ]; then
+        printf "| %-50s |\n" "[x] Package.json scripts integration"
+    else
+        printf "| %-50s |\n" "[-] No package.json detected"
+    fi
     printf "+----------------------------------------------------+\n"
+}
+
+# Project evaluation functions (extracted from tool-detection.sh)
+detect_package_manager() {
+    if [ -f "package-lock.json" ]; then
+        echo "npm"
+    elif [ -f "yarn.lock" ]; then
+        echo "yarn"
+    elif [ -f "pnpm-lock.yaml" ]; then
+        echo "pnpm"
+    elif [ -f "bun.lockb" ]; then
+        echo "bun"
+    else
+        echo "npm"  # default
+    fi
+}
+
+detect_typescript() {
+    if [ -f "tsconfig.json" ] || [ -f "src/tsconfig.json" ]; then
+        echo "true"
+    else
+        echo "false"
+    fi
+}
+
+detect_testing_framework() {
+    local package_json="package.json"
+    if [ -f "$package_json" ]; then
+        if grep -q "jest" "$package_json"; then
+            echo "jest"
+        elif grep -q "vitest" "$package_json"; then
+            echo "vitest"
+        elif grep -q "mocha" "$package_json"; then
+            echo "mocha"
+        elif grep -q "ava" "$package_json"; then
+            echo "ava"
+        else
+            echo "none"
+        fi
+    else
+        echo "none"
+    fi
+}
+
+detect_linting() {
+    if [ -f ".eslintrc.js" ] || [ -f ".eslintrc.json" ] || [ -f "eslint.config.js" ]; then
+        echo "eslint"
+    elif [ -f ".jshintrc" ]; then
+        echo "jshint"
+    else
+        echo "none"
+    fi
+}
+
+detect_formatting() {
+    if [ -f ".prettierrc" ] || [ -f ".prettierrc.json" ] || [ -f "prettier.config.js" ]; then
+        echo "prettier"
+    else
+        echo "none"
+    fi
+}
+
+detect_framework() {
+    local package_json="package.json"
+    if [ -f "$package_json" ]; then
+        if grep -q "next" "$package_json"; then
+            echo "nextjs"
+        elif grep -q "react" "$package_json"; then
+            echo "react"
+        elif grep -q "vue" "$package_json"; then
+            echo "vue"
+        elif grep -q "angular" "$package_json"; then
+            echo "angular"
+        elif grep -q "svelte" "$package_json"; then
+            echo "svelte"
+        else
+            echo "none"
+        fi
+    else
+        echo "none"
+    fi
+}
+
+evaluate_project() {
+    printf "${BLUE}🔍 Evaluating project environment...${NC}\n"
+    
+    # Detect all tools and store in global variables
+    PROJECT_PACKAGE_MANAGER=$(detect_package_manager)
+    PROJECT_TYPESCRIPT=$(detect_typescript)
+    PROJECT_FRAMEWORK=$(detect_framework)
+    PROJECT_TESTING=$(detect_testing_framework)
+    PROJECT_LINTING=$(detect_linting)
+    PROJECT_FORMATTING=$(detect_formatting)
+    
+    printf "${BLUE}📋 Project Analysis Complete${NC}\n"
+    printf "Package Manager: $PROJECT_PACKAGE_MANAGER\n"
+    printf "TypeScript: $PROJECT_TYPESCRIPT\n"
+    printf "Framework: $PROJECT_FRAMEWORK\n"
+    printf "Testing: $PROJECT_TESTING\n"
+    printf "Linting: $PROJECT_LINTING\n"
+    printf "Formatting: $PROJECT_FORMATTING\n"
 }
 
 show_tool_status() {
@@ -440,14 +575,19 @@ cleanup_and_summary() {
 
 # Main execution flow
 main() {
+    # Phase 1: Evaluate project (read-only, no file creation)
+    evaluate_project
+    get_user_confirmation
+    
+    # Phase 2: Setup (only runs after user confirmation)
+    printf "\n"
+    printf "${GREEN}🚀 Starting enhanced setup...${NC}\n"
+    
     create_directory_structure
     download_core_components
     download_prompts
     download_templates
     detect_and_show_tools
-    
-    printf "\n"
-    printf "${GREEN}🚀 Starting enhanced setup...${NC}\n"
     
     install_claude_commands
     create_agent_definitions
