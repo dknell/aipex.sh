@@ -1,0 +1,58 @@
+## TICKET ID:
+JIRA-123
+<!-- Replace with your ticket ID (Jira, GitHub Issues, Linear, Monday, etc.) -->
+
+## FEATURE:
+Build a user authentication system with JWT tokens, password reset functionality, and role-based access control. The system should integrate with our existing React app and provide secure session management.
+
+## EXAMPLES:
+- .aipex/examples/typescript/component-pattern.tsx - Follow this pattern for React components
+- .aipex/examples/security/input-validation-pattern.ts - Use these validation patterns
+- .aipex/examples/testing/component-test-pattern.test.tsx - Follow this testing structure
+
+## DOCUMENTATION:
+- JWT Library: https://github.com/auth0/node-jsonwebtoken
+- React Hook Form: https://react-hook-form.com/
+- Zod Validation: https://zod.dev/
+
+## TYPESCRIPT REQUIREMENTS:
+```typescript
+interface User {
+  readonly id: string;
+  readonly email: string;
+  readonly name: string;
+  readonly role: UserRole;
+  readonly createdAt: Date;
+  readonly lastLoginAt: Date | null;
+}
+
+type UserRole = 'admin' | 'user' | 'guest';
+
+interface AuthContext {
+  readonly user: User | null;
+  readonly isAuthenticated: boolean;
+  readonly isLoading: boolean;
+  readonly error: string | null;
+}
+```
+
+## TESTING REQUIREMENTS:
+- Unit test coverage: minimum 85%
+- Integration tests for all authentication flows
+- E2E tests for login/logout/password reset
+- Performance: login response < 500ms
+- Security: test against common attack vectors
+
+## SECURITY CONSIDERATIONS:
+- JWT tokens with 1-hour expiration
+- Refresh token rotation
+- Rate limiting: 5 login attempts per minute
+- Password requirements: 12 chars, special chars, numbers
+- Input sanitization for all form fields
+- HTTPS only for authentication endpoints
+
+## OTHER CONSIDERATIONS:
+- Integrate with existing Redux store
+- Maintain backward compatibility with current user sessions
+- Add proper loading states and error handling
+- Ensure accessibility compliance (WCAG 2.1 AA)
