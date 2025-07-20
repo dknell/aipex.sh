@@ -308,7 +308,7 @@ detect_testing_framework() {
 }
 
 detect_linting() {
-    if [ -f ".eslintrc.js" ] || [ -f ".eslintrc.json" ] || [ -f "eslint.config.js" || -f "eslint.config.cjs" || -f "eslint.config.mjs" ]; then
+    if [ -f ".eslintrc.js" ] || [ -f ".eslintrc.json" ] || [ -f "eslint.config.js" ] || [ -f "eslint.config.cjs" ] || [ -f "eslint.config.mjs" ]; then
         echo "eslint"
     elif [ -f ".jshintrc" ]; then
         echo "jshint"
