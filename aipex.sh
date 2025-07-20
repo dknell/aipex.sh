@@ -244,14 +244,6 @@ show_planned_actions() {
     printf "\n"
     printf "${CYAN}📋 PLANNED ACTIONS:${NC}\n"
     printf "+----------------------------------------------------+\n"
-    printf "| %-50s |\n" "DETECTED ENVIRONMENT:"
-    printf "| %-50s |\n" "Package Manager: $PROJECT_PACKAGE_MANAGER"
-    printf "| %-50s |\n" "TypeScript: $PROJECT_TYPESCRIPT"
-    printf "| %-50s |\n" "Framework: $PROJECT_FRAMEWORK"
-    printf "| %-50s |\n" "Testing: $PROJECT_TESTING"
-    printf "| %-50s |\n" "Linting: $PROJECT_LINTING"
-    printf "| %-50s |\n" "Formatting: $PROJECT_FORMATTING"
-    printf "| %-50s |\n" ""
     printf "| %-50s |\n" "DIRECTORY STRUCTURE:"
     printf "| %-50s |\n" "[x] Create .claude/ commands & agents"
     printf "| %-50s |\n" "[x] Create .aipex/ organized container"
@@ -316,7 +308,7 @@ detect_testing_framework() {
 }
 
 detect_linting() {
-    if [ -f ".eslintrc.js" ] || [ -f ".eslintrc.json" ] || [ -f "eslint.config.js" ]; then
+    if [ -f ".eslintrc.js" ] || [ -f ".eslintrc.json" ] || [ -f "eslint.config.js" || -f "eslint.config.cjs" || -f "eslint.config.mjs" ]; then
         echo "eslint"
     elif [ -f ".jshintrc" ]; then
         echo "jshint"
