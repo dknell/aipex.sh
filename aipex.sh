@@ -5,6 +5,28 @@
 
 set -e
 
+# Parse command line arguments
+DRY_RUN=false
+while [[ $# -gt 0 ]]; do
+    case $1 in
+        --dry-run)
+            DRY_RUN=true
+            shift
+            ;;
+        -h|--help)
+            echo "Usage: $0 [--dry-run] [--help]"
+            echo "  --dry-run    Show what would be done without making changes"
+            echo "  --help       Show this help message"
+            exit 0
+            ;;
+        *)
+            echo "Unknown option: $1"
+            echo "Use --help for usage information"
+            exit 1
+            ;;
+    esac
+done
+
 # Colors for output
 RED='\033[0;31m'
 GREEN='\033[0;32m'
@@ -19,6 +41,9 @@ TEMPLATES_BASE_URL="$REPO_URL/templates"
 
 # Header
 echo -e "${CYAN}🚀 Enterprise AI Coding Workflow Setup v2.1${NC}"
+if [ "$DRY_RUN" = true ]; then
+    echo -e "${YELLOW}📋 DRY RUN MODE - No files will be created${NC}"
+fi
 echo -e "${BLUE}Non-prescriptive, organized, and Claude CLI integrated${NC}"
 echo ""
 
@@ -33,6 +58,11 @@ download_file() {
     local url=$1
     local output=$2
     local description=$3
+    
+    if [ "$DRY_RUN" = true ]; then
+        echo -e "${BLUE}Downloading $description... ${YELLOW}(SKIPPED - dry-run)${NC}"
+        return 0
+    fi
     
     echo -e "${BLUE}Downloading $description...${NC}"
     if command -v curl &> /dev/null; then
@@ -55,6 +85,14 @@ download_template() {
 create_directory_structure() {
     echo -e "${BLUE}Creating directory structure...${NC}"
     
+    if [ "$DRY_RUN" = true ]; then
+        echo "✓ Directory structure created ${YELLOW}(SKIPPED - dry-run)${NC}"
+        echo "  Would create: .claude/{commands,agents,hooks}"
+        echo "  Would create: .aipex/{config,PRPs/{templates,generated},examples/{typescript,testing,security,components}}"
+        echo "  Would create: .aipex/templates/{prompts,configs,examples,scripts,agents}"
+        return 0
+    fi
+    
     # Core directories
     mkdir -p .claude/{commands,agents,hooks}
     mkdir -p .aipex/{config,PRPs/{templates,generated},examples/{typescript,testing,security,components}}
@@ -69,7 +107,12 @@ download_core_components() {
     # Download utility scripts
     download_template "scripts/tool-detection.sh" ".aipex/templates/scripts/tool-detection.sh"
     download_template "scripts/setup-configs.sh" ".aipex/templates/scripts/setup-configs.sh"
-    chmod +x .aipex/templates/scripts/*.sh
+    
+    if [ "$DRY_RUN" = true ]; then
+        echo -e "${BLUE}Making scripts executable... ${YELLOW}(SKIPPED - dry-run)${NC}"
+    else
+        chmod +x .aipex/templates/scripts/*.sh
+    fi
     
     # Download Claude context template
     download_template "configs/aipex-context.md" ".aipex/templates/configs/aipex-context.md"
@@ -77,7 +120,11 @@ download_core_components() {
     # Download INITIAL.md template
     download_file "$REPO_URL/INITIAL.md.template" "INITIAL.md.template" "INITIAL.md template"
     
-    echo "✓ Core components downloaded"
+    if [ "$DRY_RUN" = true ]; then
+        echo "✓ Core components downloaded ${YELLOW}(SKIPPED - dry-run)${NC}"
+    else
+        echo "✓ Core components downloaded"
+    fi
 }
 
 download_prompts() {
@@ -97,7 +144,11 @@ download_prompts() {
         download_template "prompts/$prompt.md" ".aipex/templates/prompts/$prompt.md"
     done
     
-    echo "✓ Prompts downloaded"
+    if [ "$DRY_RUN" = true ]; then
+        echo "✓ Prompts downloaded ${YELLOW}(SKIPPED - dry-run)${NC}"
+    else
+        echo "✓ Prompts downloaded"
+    fi
 }
 
 download_templates() {
@@ -114,23 +165,35 @@ download_templates() {
         download_template "agents/$agent.md" ".aipex/templates/agents/$agent.md"
     done
     
-    echo "✓ Templates downloaded"
+    if [ "$DRY_RUN" = true ]; then
+        echo "✓ Templates downloaded ${YELLOW}(SKIPPED - dry-run)${NC}"
+    else
+        echo "✓ Templates downloaded"
+    fi
 }
 
 detect_and_show_tools() {
-    # Source tool detection functions
-    source .aipex/templates/scripts/tool-detection.sh
-    source .aipex/templates/scripts/setup-configs.sh
-    
-    # Show detected tools
-    show_tool_status
+    if [ "$DRY_RUN" = false ]; then
+        # Source tool detection functions
+        source .aipex/templates/scripts/tool-detection.sh
+        source .aipex/templates/scripts/setup-configs.sh
+        
+        # Show detected tools
+        show_tool_status
+    else
+        echo -e "${BLUE}🔍 Detected Development Environment: ${YELLOW}(SKIPPED - dry-run)${NC}"
+    fi
     
     # Display interactive confirmation
     show_planned_actions
     
     # Get user confirmation
     echo ""
-    echo -e "${CYAN}Continue with setup? [Y/n]:${NC} \c"
+    if [ "$DRY_RUN" = true ]; then
+        echo -e "${CYAN}Continue with dry-run? [Y/n]:${NC} \c"
+    else
+        echo -e "${CYAN}Continue with setup? [Y/n]:${NC} \c"
+    fi
     read -r response
     if [[ "$response" =~ ^[Nn]$ ]]; then
         echo "Setup cancelled."
@@ -173,6 +236,12 @@ show_tool_status() {
 install_claude_commands() {
     echo -e "${BLUE}Installing Claude Code commands...${NC}"
     
+    if [ "$DRY_RUN" = true ]; then
+        echo "✓ Installed 7 enhanced Claude commands ${YELLOW}(SKIPPED - dry-run)${NC}"
+        echo "  Would copy: .aipex/templates/prompts/*.md → .claude/commands/"
+        return 0
+    fi
+    
     # Copy prompt templates to Claude commands
     local prompts=(
         "generate-prp"
@@ -194,6 +263,12 @@ install_claude_commands() {
 create_agent_definitions() {
     echo -e "${BLUE}Creating agent definitions...${NC}"
     
+    if [ "$DRY_RUN" = true ]; then
+        echo "✓ Agent definitions created ${YELLOW}(SKIPPED - dry-run)${NC}"
+        echo "  Would copy: .aipex/templates/agents/*.md → .claude/agents/"
+        return 0
+    fi
+    
     local agents=("developer-agent" "qa-agent" "security-agent")
     for agent in "${agents[@]}"; do
         cp ".aipex/templates/agents/$agent.md" ".claude/agents/$agent.md"
@@ -204,6 +279,15 @@ create_agent_definitions() {
 
 setup_aipex_structure() {
     echo -e "${BLUE}Setting up .aipex structure...${NC}"
+    
+    if [ "$DRY_RUN" = true ]; then
+        echo "✓ .aipex structure configured ${YELLOW}(SKIPPED - dry-run)${NC}"
+        echo "  Would run: setup-configs.sh script"
+        echo "  Would copy: security-rules.json → .aipex/config/"
+        echo "  Would copy: component-pattern.tsx → .aipex/examples/typescript/"
+        echo "  Would copy: prp-enterprise-base.md → .aipex/PRPs/templates/"
+        return 0
+    fi
     
     # Run the setup script from templates
     bash .aipex/templates/scripts/setup-configs.sh
@@ -222,6 +306,16 @@ setup_aipex_structure() {
 
 setup_claude_integration() {
     echo -e "${BLUE}Setting up Claude CLI integration...${NC}"
+    
+    if [ "$DRY_RUN" = true ]; then
+        if command -v claude &> /dev/null; then
+            echo "🤖 Claude CLI detected - setting up project context... ${YELLOW}(SKIPPED - dry-run)${NC}"
+            echo "  Would create/append: CLAUDE.md with enterprise AI workflow context"
+        else
+            echo "⚠ Claude CLI not found - skipping CLAUDE.md generation ${YELLOW}(dry-run)${NC}"
+        fi
+        return 0
+    fi
     
     if command -v claude &> /dev/null; then
         echo "🤖 Claude CLI detected - setting up project context..."
@@ -251,43 +345,80 @@ setup_claude_integration() {
 }
 
 cleanup_and_summary() {
-    echo -e "${BLUE}Finalizing setup...${NC}"
+    if [ "$DRY_RUN" = true ]; then
+        echo -e "${BLUE}Dry-run complete - no files were created${NC}"
+    else
+        echo -e "${BLUE}Finalizing setup...${NC}"
+    fi
     
     # Final summary
     echo ""
-    echo -e "${GREEN}✅ Enterprise AI Workflow Setup Complete!${NC}"
+    if [ "$DRY_RUN" = true ]; then
+        echo -e "${GREEN}✅ Enterprise AI Workflow Dry-run Complete!${NC}"
+        echo -e "${CYAN}No files or directories were created. Run without --dry-run to install.${NC}"
+    else
+        echo -e "${GREEN}✅ Enterprise AI Workflow Setup Complete!${NC}"
+    fi
     echo ""
-    echo -e "${CYAN}📋 WHAT WAS INSTALLED:${NC}"
-    echo "• Enhanced Claude Code commands with multi-agent validation"
-    echo "• Smart tool detection (adapts to your existing setup)"
-    echo "• Organized .aipex/ structure for all generated content"
-    echo "• Ticket-based PRP naming for project management"
-    
-    if command -v claude &> /dev/null; then
-        echo "• CLAUDE.md with enterprise AI workflow context"
+    if [ "$DRY_RUN" = true ]; then
+        echo -e "${CYAN}📋 WHAT WOULD BE INSTALLED:${NC}"
+        echo "• Enhanced Claude Code commands with multi-agent validation ${YELLOW}(not created)${NC}"
+        echo "• Smart tool detection (adapts to your existing setup) ${YELLOW}(not run)${NC}"
+        echo "• Organized .aipex/ structure for all generated content ${YELLOW}(not created)${NC}"
+        echo "• Ticket-based PRP naming for project management ${YELLOW}(not installed)${NC}"
+    else
+        echo -e "${CYAN}📋 WHAT WAS INSTALLED:${NC}"
+        echo "• Enhanced Claude Code commands with multi-agent validation"
+        echo "• Smart tool detection (adapts to your existing setup)"
+        echo "• Organized .aipex/ structure for all generated content"
+        echo "• Ticket-based PRP naming for project management"
     fi
     
-    echo "• Security configurations and example patterns"
-    echo "• Package.json scripts for validation workflow"
+    if command -v claude &> /dev/null; then
+        if [ "$DRY_RUN" = true ]; then
+            echo "• CLAUDE.md with enterprise AI workflow context ${YELLOW}(not created)${NC}"
+        else
+            echo "• CLAUDE.md with enterprise AI workflow context"
+        fi
+    fi
+    
+    if [ "$DRY_RUN" = true ]; then
+        echo "• Security configurations and example patterns ${YELLOW}(not created)${NC}"
+        echo "• Package.json scripts for validation workflow ${YELLOW}(not created)${NC}"
+    else
+        echo "• Security configurations and example patterns"
+        echo "• Package.json scripts for validation workflow"
+    fi
     echo ""
     
-    echo -e "${CYAN}🚀 GETTING STARTED:${NC}"
-    echo "1. Customize your ticket: ${YELLOW}cp INITIAL.md.template INITIAL.md${NC}"
-    echo "2. Edit INITIAL.md with your ticket ID and feature details"
-    echo "3. Generate PRP: ${YELLOW}/generate-prp INITIAL.md${NC}"
-    echo "4. Execute with validation: ${YELLOW}/execute-prp .aipex/PRPs/generated/{TICKET_ID}.md${NC}"
-    echo ""
+    if [ "$DRY_RUN" = false ]; then
+        echo -e "${CYAN}🚀 GETTING STARTED:${NC}"
+        echo "1. Customize your ticket: ${YELLOW}cp INITIAL.md.template INITIAL.md${NC}"
+        echo "2. Edit INITIAL.md with your ticket ID and feature details"
+        echo "3. Generate PRP: ${YELLOW}/generate-prp INITIAL.md${NC}"
+        echo "4. Execute with validation: ${YELLOW}/execute-prp .aipex/PRPs/generated/{TICKET_ID}.md${NC}"
+        echo ""
+        
+        echo -e "${CYAN}🛠️ MANUAL VALIDATION COMMANDS:${NC}"
+        echo "• ${YELLOW}/validate-ts${NC} - TypeScript compilation and type checking"
+        echo "• ${YELLOW}/validate-lint${NC} - ESLint validation with auto-fixing"
+        echo "• ${YELLOW}/run-tests${NC} - Full test suite with coverage"
+        echo "• ${YELLOW}/security-check${NC} - Security scanning and validation"
+        echo "• ${YELLOW}/qa-review${NC} - QA agent comprehensive review"
+        echo ""
+    else
+        echo -e "${CYAN}🚀 TO INSTALL FOR REAL:${NC}"
+        echo "Run the same command without --dry-run:"
+        echo "${YELLOW}curl -sSL https://raw.githubusercontent.com/dknell/aipex.sh/refs/heads/main/aipex.sh | bash${NC}"
+        echo ""
+    fi
     
-    echo -e "${CYAN}🛠️ MANUAL VALIDATION COMMANDS:${NC}"
-    echo "• ${YELLOW}/validate-ts${NC} - TypeScript compilation and type checking"
-    echo "• ${YELLOW}/validate-lint${NC} - ESLint validation with auto-fixing"
-    echo "• ${YELLOW}/run-tests${NC} - Full test suite with coverage"
-    echo "• ${YELLOW}/security-check${NC} - Security scanning and validation"
-    echo "• ${YELLOW}/qa-review${NC} - QA agent comprehensive review"
-    echo ""
-    
-    echo -e "${GREEN}Ready for enterprise-grade AI-assisted development! 🎯${NC}"
-    echo -e "${CYAN}Note: This setup adapts to your existing tool configurations${NC}"
+    if [ "$DRY_RUN" = true ]; then
+        echo -e "${GREEN}Dry-run completed! Run without --dry-run to install. 🎯${NC}"
+    else
+        echo -e "${GREEN}Ready for enterprise-grade AI-assisted development! 🎯${NC}"
+        echo -e "${CYAN}Note: This setup adapts to your existing tool configurations${NC}"
+    fi
 }
 
 # Main execution flow
