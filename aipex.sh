@@ -72,7 +72,7 @@ download_core_components() {
     chmod +x .aipex/templates/scripts/*.sh
     
     # Download Claude context template
-    download_template "aipex-context.md" ".aipex/templates/aipex-context.md"
+    download_template "configs/aipex-context.md" ".aipex/templates/configs/aipex-context.md"
     
     # Download INITIAL.md template
     download_file "$REPO_URL/INITIAL.md.template" "INITIAL.md.template" "INITIAL.md template"
@@ -151,27 +151,12 @@ show_planned_actions() {
     echo "│ ✓ Install 7 enhanced Claude commands    │"
     echo "│ ✓ Setup multi-agent validation system   │"
     echo "│                                         │"
-    echo "│ TOOL DETECTION:                         │"
-    
-    show_tool_status "TypeScript" "$TYPESCRIPT_AVAILABLE"
-    show_tool_status "ESLint" "$ESLINT_AVAILABLE"
-    show_tool_status "Jest" "$JEST_AVAILABLE"
-    show_tool_status "Playwright" "$PLAYWRIGHT_AVAILABLE"
-    show_tool_status "Claude CLI" "$CLAUDE_AVAILABLE"
-    
-    echo "│                                         │"
     echo "│ FEATURES:                               │"
     echo "│ ✓ Ticket-based PRP naming              │"
     echo "│ ✓ Security configurations              │"
     echo "│ ✓ Example patterns                     │"
     echo "│ ✓ Package.json scripts (if available)  │"
     echo "└─────────────────────────────────────────┘"
-    
-    if [ ${#missing[@]} -gt 0 ]; then
-        echo ""
-        echo -e "${YELLOW}📦 MISSING TOOLS:${NC}"
-        get_missing_tools
-    fi
 }
 
 show_tool_status() {
@@ -220,8 +205,8 @@ create_agent_definitions() {
 setup_aipex_structure() {
     echo -e "${BLUE}Setting up .aipex structure...${NC}"
     
-    # Setup .aipex structure (from setup-configs.sh)
-    setup_aipex_structure
+    # Run the setup script from templates
+    bash .aipex/templates/scripts/setup-configs.sh
     
     # Copy security configuration
     cp ".aipex/templates/configs/security-rules.json" ".aipex/config/security-rules.json"
@@ -238,7 +223,7 @@ setup_aipex_structure() {
 setup_claude_integration() {
     echo -e "${BLUE}Setting up Claude CLI integration...${NC}"
     
-    if [ "$CLAUDE_AVAILABLE" = "true" ]; then
+    if command -v claude &> /dev/null; then
         echo "🤖 Claude CLI detected - setting up project context..."
         
         if [ ! -f "CLAUDE.md" ]; then
@@ -249,14 +234,14 @@ setup_claude_integration() {
             echo "" >> CLAUDE.md
             echo "# Enterprise AI Workflow Context" >> CLAUDE.md
             echo "" >> CLAUDE.md
-            cat .aipex/templates/aipex-context.md >> CLAUDE.md
+            cat .aipex/templates/configs/aipex-context.md >> CLAUDE.md
             echo "✓ Added enterprise AI workflow context to CLAUDE.md"
         else
             echo "CLAUDE.md exists - appending enterprise AI workflow context..."
             echo "" >> CLAUDE.md
             echo "# Enterprise AI Workflow Context" >> CLAUDE.md
             echo "" >> CLAUDE.md
-            cat .aipex/templates/aipex-context.md >> CLAUDE.md
+            cat .aipex/templates/configs/aipex-context.md >> CLAUDE.md
             echo "✓ Enterprise AI workflow context added to existing CLAUDE.md"
         fi
     else
@@ -266,8 +251,7 @@ setup_claude_integration() {
 }
 
 cleanup_and_summary() {
-    echo -e "${BLUE}Cleaning up temporary files...${NC}"
-    rm -f .aipex-tools.env
+    echo -e "${BLUE}Finalizing setup...${NC}"
     
     # Final summary
     echo ""
@@ -279,7 +263,7 @@ cleanup_and_summary() {
     echo "• Organized .aipex/ structure for all generated content"
     echo "• Ticket-based PRP naming for project management"
     
-    if [ "$CLAUDE_AVAILABLE" = "true" ]; then
+    if command -v claude &> /dev/null; then
         echo "• CLAUDE.md with enterprise AI workflow context"
     fi
     
@@ -302,12 +286,6 @@ cleanup_and_summary() {
     echo "• ${YELLOW}/qa-review${NC} - QA agent comprehensive review"
     echo ""
     
-    if [ ${#missing[@]} -gt 0 ]; then
-        echo -e "${YELLOW}⚠️ OPTIONAL TOOL INSTALLATION:${NC}"
-        get_missing_tools
-        echo ""
-    fi
-    
     echo -e "${GREEN}Ready for enterprise-grade AI-assisted development! 🎯${NC}"
     echo -e "${CYAN}Note: This setup adapts to your existing tool configurations${NC}"
 }
@@ -328,8 +306,7 @@ main() {
     setup_aipex_structure
     setup_claude_integration
     
-    # Setup package scripts (only if tools are available)
-    setup_package_scripts
+    # Package scripts are handled by setup-configs.sh
     
     cleanup_and_summary
 }
