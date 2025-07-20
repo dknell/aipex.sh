@@ -366,17 +366,6 @@ evaluate_project() {
     printf "Formatting: $PROJECT_FORMATTING\n"
 }
 
-show_tool_status() {
-    local tool_name=$1
-    local is_available=$2
-    
-    if [ "$is_available" = "true" ]; then
-        echo "│ ✓ $tool_name detected (will use existing) │"
-    else
-        echo "│ ⚠ $tool_name not detected                │"
-    fi
-}
-
 install_claude_commands() {
     printf "${BLUE}Installing Claude Code commands...${NC}\n"
     
