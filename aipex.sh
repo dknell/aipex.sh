@@ -122,9 +122,8 @@ detect_and_show_tools() {
     source .aipex/templates/scripts/tool-detection.sh
     source .aipex/templates/scripts/setup-configs.sh
     
-    # Detect available tools
-    detect_tools
-    source .aipex-tools.env
+    # Show detected tools
+    show_tool_status
     
     # Display interactive confirmation
     show_planned_actions
